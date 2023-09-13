@@ -4,6 +4,7 @@ from pathlib import Path
 import time
 
 goPath = Path("theDestroyer.go")
+movePath = Path("move_file")
 
 ## look for .go files in directory
 
@@ -16,20 +17,45 @@ goPath = Path("theDestroyer.go")
 
 ## read move_file (if empty then first player)
 
+## check if valid move
+def checkValidMove(move):
+    ##to be implemented
+    move
+    ## return true if valid move, false if not
+
+## write moves to our game board
+def internalGame(move):
+    move
+    ##to be implemented
+    ##return true if successfully wrote move to board, false otherwise
+
 ## calculate move
+def calculateMove():
+    calculate = 1
+    ##to be implemented
+    ##return move that our player is making
 
 ## write to move file
 
 ## wait for change (added files) in directory
 
 def main():
-    ##im just trying to test and see if this might work
     print("here")
-    time.sleep(4)
-    print("done sleeping")
-    if goPath.exists():
-        print("found the file!!!!")
+    while not goPath.exists():
+        time.sleep(0.1)
+
+    if movePath.exists():
+        moveFile = open(movePath, "r+") ##can read and write to the move file
+        if (os.movePath.getsize() == 0):
+            ### first player
+            ##for testing purposes below line
+            moveFile.write("theDestroyer 1,3 2,3")
+            ourMove = calculateMove()
+        else:
+            theirMove = moveFile.read()
+            isValid = checkValidMove(theirMove)
 
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
