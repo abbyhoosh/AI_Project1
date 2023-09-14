@@ -1,10 +1,14 @@
 # Abby and Alyssa's dots and boxes player
+
+################# run with command: python3 referee.py theDestroyer theDestroyer --time_limit 10 & python3 theDestroyer.py &
+
 import os
 from pathlib import Path
 import time
 
 goPath = Path("theDestroyer.go")
 movePath = Path("move_file")
+endPath = Path("end_game")
 
 ## look for .go files in directory
 
@@ -16,6 +20,13 @@ movePath = Path("move_file")
 
 
 ## read move_file (if empty then first player)
+
+## cut off other teams name in their move
+#     returns just the coordinates of the move
+def justMove(fullMove):
+    space = fullMove.find(" ")
+    onlyMove = fullMove[space+1:]
+    return onlyMove
 
 ## check if valid move
 def checkValidMove(move):
@@ -41,15 +52,17 @@ def calculateMove():
 
 def main():
     print("here")
+
     while not goPath.exists():
         time.sleep(0.1)
 
     if movePath.exists():
         moveFile = open(movePath, "r+") ##can read and write to the move file
-        if (os.movePath.getsize() == 0):
+        if (os.path.getsize(movePath) == 0): ## if move file is empty
             ### first player
             ##for testing purposes below line
             moveFile.write("theDestroyer 1,3 2,3")
+            print("does it get here?s")
             ourMove = calculateMove()
         else:
             theirMove = moveFile.read()
