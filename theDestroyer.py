@@ -40,34 +40,47 @@ def internalGame(move):
     ##to be implemented
     ##return true if successfully wrote move to board, false otherwise
 
+## calculates move for when we are first
+def calculateFirstMove():
+    moveFileWrite = open(movePath, "w")
+    moveFileWrite.write("theDestroyer 1,3 2,3")
+    moveFileWrite.close()
+
 ## calculate move
 def calculateMove():
     calculate = 1
+    moveFileWrite = open(movePath, "w")         #will delete these later
+    moveFileWrite.write("theDestroyer 2,2 2,1")
+    moveFileWrite.close()
     ##to be implemented
     ##return move that our player is making
 
 ## write to move file
-
+## move is just the string of the coordinates of the move
+def writeToMoveFile(move):
+    moveFileWrite = open(movePath, "w")
+    moveFileWrite.write("theDestroyer " + move)
+    moveFileWrite.close()
 ## wait for change (added files) in directory
 
 def main():
     print("here")
+    while not endPath.exists():
+        while not goPath.exists():
+            time.sleep(0.1)
 
-    while not goPath.exists():
-        time.sleep(0.1)
-
-    if movePath.exists():
-        moveFile = open(movePath, "r+") ##can read and write to the move file
-        if (os.path.getsize(movePath) == 0): ## if move file is empty
-            ### first player
-            ##for testing purposes below line
-            moveFile.write("theDestroyer 1,3 2,3")
-            print("does it get here?s")
-            ourMove = calculateMove()
-        else:
-            theirMove = moveFile.read()
-            isValid = checkValidMove(theirMove)
-
+        if movePath.exists() and goPath.exists():
+            moveFile = open(movePath, "r") ##can read the move file
+            if (os.path.getsize(movePath) == 0): ## if move file is empty
+                moveFile.close()        ##needs to close read only and open write only to overwrite
+                ourMove = calculateFirstMove()
+            else:
+                theirMove = moveFile.read()
+                moveFile.close()
+                justTheirMove = justMove(theirMove)
+                print(justTheirMove)
+                isValid = checkValidMove(justTheirMove)
+                calculateMove()
 
 
 if __name__ == "__main__":
