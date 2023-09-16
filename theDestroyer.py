@@ -5,10 +5,13 @@
 import os
 from pathlib import Path
 import time
+import numpy as np
 
 goPath = Path("theDestroyer.go")
 movePath = Path("move_file")
 endPath = Path("end_game")
+passPath = Path("theDestroyer.pass")
+gameBoard = np.full((10,10), 0)
 
 ## look for .go files in directory
 
@@ -29,9 +32,41 @@ def justMove(fullMove):
     return onlyMove
 
 ## check if valid move
+    #move is just the coordinates string
 def checkValidMove(move):
     ##to be implemented
-    move
+    space = move.find(" ")
+    first = move[:space]
+    second = move[space+1:]
+    commaone = first.find(",")
+    commatwo = second.find(",")
+    one = int(first[:commaone])
+    two = int(first[commaone+1:])
+    three = int(second[:commatwo])
+    four = int(second[commatwo+1:])
+
+    ##checking if outside the board
+    if (one<0 or two<0 or three<0 or four<0):
+        return False
+    if (one>9 or two>9 or three>9 or four>9):
+        return False
+
+    ## checking if edges are next to each other
+    #checking if more that 1 point away
+    if (one != three +1 and one != three -1) and (one != three):
+        return False
+    if (two != four +1 and two != four -1) and (four != two):
+        return False
+    if (one == three and two == four):
+        return False
+    #check if both x and y are one away
+    if (one == three+1 or one == three-1)and(two==four-1 or two ==four+1):
+        return False
+    ###################
+    #still need to check whether move has already been made on the board
+
+    return True
+    
     ## return true if valid move, false if not
 
 ## write moves to our game board
@@ -45,6 +80,7 @@ def calculateFirstMove():
     moveFileWrite = open(movePath, "w")
     moveFileWrite.write("theDestroyer 1,3 2,3")
     moveFileWrite.close()
+    time.sleep(0.1)
 
 ## calculate move
 def calculateMove():
@@ -52,6 +88,7 @@ def calculateMove():
     moveFileWrite = open(movePath, "w")         #will delete these later
     moveFileWrite.write("theDestroyer 2,2 2,1")
     moveFileWrite.close()
+    time.sleep(0.1)
     ##to be implemented
     ##return move that our player is making
 
@@ -61,13 +98,36 @@ def writeToMoveFile(move):
     moveFileWrite = open(movePath, "w")
     moveFileWrite.write("theDestroyer " + move)
     moveFileWrite.close()
+    time.sleep(0.1)     ## need to account for time for the ref to see the change in file
 ## wait for change (added files) in directory
+
+def passMove():
+    closedBoxFile= open(movePath, "r")
+    closedBoxSpot = closedBoxFile.read()
+    internalGame(closedBoxSpot)
+    closedBoxFile.close()
+    writePassFile = open(movePath, "w")
+    writePassFile.write("theDestoyer 0,0 0,0")
+    writePassFile.close()
+    time.sleep(0.1)
 
 def main():
     print("here")
+    check = checkValidMove("1,2 3,4") #false        
+    print(check)
+    print(checkValidMove("-1,1 2,1"))   #false
+    print(checkValidMove("0,1 2,1")) #false
+    print(checkValidMove("8,8 8,9")) #true
+    print(checkValidMove("8,10 8,9")) #false
+    print(checkValidMove("6,8 8,9")) #false 
+    print(checkValidMove("1,1 2,2")) #false
+
     while not endPath.exists():
         while not goPath.exists():
             time.sleep(0.1)
+            if passPath.exists():
+                passMove()
+
 
         if movePath.exists() and goPath.exists():
             moveFile = open(movePath, "r") ##can read the move file
