@@ -47,25 +47,25 @@ def checkValidMove(move):
 
     ##checking if outside the board
     if (one<0 or two<0 or three<0 or four<0):
-        return False
+        return False, "Outside of the board"
     if (one>9 or two>9 or three>9 or four>9):
-        return False
+        return False, "Outside of the board"
 
     ## checking if edges are next to each other
     #checking if more that 1 point away
     if (one != three +1 and one != three -1) and (one != three):
-        return False
+        return False, "edges not next to each other"
     if (two != four +1 and two != four -1) and (four != two):
-        return False
+        return False, "edges not next to each other"
     if (one == three and two == four):
-        return False
+        return False, "not a line, just a point"
     #check if both x and y are one away
     if (one == three+1 or one == three-1)and(two==four-1 or two ==four+1):
-        return False
+        return False, "edges not next to each other"
     ###################
     #still need to check whether move has already been made on the board
 
-    return True
+    return True, "all good"
     
     ## return true if valid move, false if not
 
