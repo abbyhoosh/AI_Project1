@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import time
 import numpy as np
+import math
 
 class Box:
     def __init__(self, boxnum):
@@ -15,12 +16,25 @@ class Box:
         self.topline = 0
         self.rightline = 0
         self.bottomline = 0
-
+        self.filledCount = 0 #should be the same number as returned by countFilledSides
+    #returns true if all the sides of the box are filled
     def isFullBox(self):
         if(self.leftline ==1 and self.topline == 1 and self.bottomline ==1 and self.rightline ==1):
             return True
         else:
             return False
+    # returns the number of sides that contain a line/are filled
+    def countFilledSides(self):
+        count = 0
+        if(self.leftline ==1):
+            count +=1
+        if(self.rightline == 1):
+            count +=1
+        if(self.bottomline ==1):
+            count +=1
+        if(self.topline ==1):
+            count+=1
+        return count
 
 goPath = Path("theDestroyer.go")
 movePath = Path("move_file")
@@ -63,7 +77,6 @@ def individualCoords(move):
 ## check if valid move
     #move is just the coordinates string
 def checkValidMove(coordmove):
-    ##to be implemented
     one,two,three,four = individualCoords(coordmove)
 
     ##checking if outside the board
@@ -83,8 +96,8 @@ def checkValidMove(coordmove):
     #check if both x and y are one away
     if (one == three+1 or one == three-1)and(two==four-1 or two ==four+1):
         return False, "edges not next to each other"
-    ###################
-    #still need to check whether move has already been made on the board
+    
+    #checking if move is already on the board
     smallBoxnum, bigBoxnum, horv = findBoxNumber(one,two,three,four)
     if(smallBoxnum != -1):
         if(horv == "h"):
@@ -102,9 +115,9 @@ def checkValidMove(coordmove):
                 return False, "line already taken"
 
     return True, "all good"
-    
     ## return true if valid move, false if not
 
+#finds the box number(s) that a set of coordinates will map to 
 def findBoxNumber(one, two, three, four):
     if(one == three): ##if horizontal line
         smallx, smally = getSmallerHorizCoord(one,two,three,four)
@@ -135,12 +148,13 @@ def findBoxNumber(one, two, three, four):
             smallBoxnum = 9*smallx + (smally-1)
             return smallBoxnum, bigBoxnum, "v"
 
+#gets the smaller coordinate between two coordinates
 def getSmallerHorizCoord(one,two,three,four):
     if (two<four):
         return one,two
     else:
         return three,four
-    
+#gets the smaller coordinate between two coordinates
 def getSmallerVertCoord(one,two,three,four):
     if (one<three):
         return one,two
@@ -160,15 +174,19 @@ def updateInternalGame(move):
     if(bigBoxnum != -1):
         if(horv == "h"):
             allBoxes[bigBoxnum].topline = 1
+            allBoxes[bigBoxnum].filledCount +=1
         elif(horv == "v"):
             allBoxes[bigBoxnum].leftline = 1
+            allBoxes[bigBoxnum].filledCount +=1
         if(allBoxes[bigBoxnum].isFullBox()):
             allBoxes[bigBoxnum].heldBy = player
     if(smallBoxnum != -1):
         if(horv == "h"):
             allBoxes[smallBoxnum].bottomline = 1
+            allBoxes[smallBoxnum].filledCount +=1
         elif(horv == "v"):
             allBoxes[smallBoxnum].rightline = 1
+            allBoxes[smallBoxnum].filledCount +=1
         if(allBoxes[smallBoxnum].isFullBox()):
             allBoxes[smallBoxnum].heldBy = player
     
@@ -202,9 +220,12 @@ def writeToMoveFile(move):
     time.sleep(0.2)     ## need to account for time for the ref to see the change in file
 ## wait for change (added files) in directory
 
+#protocol for when pass file is made in directory
 def passMove():
     closedBoxFile= open(movePath, "r")
     closedBoxSpot = closedBoxFile.read()
+    player, justTheirMove = splitMove(closedBoxSpot)
+    checkValidMove(justTheirMove)
     updateInternalGame(closedBoxSpot)
     closedBoxFile.close()
     writePassFile = open(movePath, "w")
@@ -254,8 +275,9 @@ def main():
             if passPath.exists():
                 passMove()
 
-
-        if movePath.exists() and goPath.exists():
+        if passPath.exists():
+            passMove()
+        elif movePath.exists() and goPath.exists():
             moveFile = open(movePath, "r") ##can read the move file
             if (os.path.getsize(movePath) == 0): ## if move file is empty
                 moveFile.close()        ##needs to close read only and open write only to overwrite
@@ -265,12 +287,14 @@ def main():
                 moveFile.close()
                 player, justTheirMove = splitMove(theirMove)
                 print(justTheirMove)
+                if(justTheirMove == "0,0 0,0"):
+                    calculateMove()
                 isValid, reason = checkValidMove(justTheirMove)
                 if(isValid):
                     updateInternalGame(theirMove)
                     calculateMove()
                 else:
-                    print(player + "lost the game because "+ reason)
+                    print(player + " lost the game because "+ reason)
 
 
 if __name__ == "__main__":
