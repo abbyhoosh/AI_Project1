@@ -212,6 +212,27 @@ def passMove():
     writePassFile.close()
     time.sleep(0.1)
 
+## 4 layers to start
+def minimax(state, next, depth, max_min):
+    if (depth==0 or next.length==0):
+        ##then say it's done and return something
+        return state
+    
+    ## changes comparable value whether it is a max or min layer true is max layer
+    if (max_min):
+        bestMove = (-10000, None)
+    else:
+        bestMove = (None, 10000)
+
+## utility function that determines if ai has more than the other player in points for temrinal moves
+def utility():
+    for box in allBoxes:
+        aiPoints = 0
+        if (box.heldBy == "theDestroyer"):
+            aiPoints += 1
+    opponentPoints = 81 - aiPoints
+    score = aiPoints - opponentPoints
+    return score 
 
 def main():
     print("here")
