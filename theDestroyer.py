@@ -85,10 +85,55 @@ def checkValidMove(coordmove):
         return False, "edges not next to each other"
     ###################
     #still need to check whether move has already been made on the board
+    smallBoxnum, bigBoxnum, horv = findBoxNumber(one,two,three,four)
+    if(smallBoxnum != -1):
+        if(horv == "h"):
+            if(allBoxes[smallBoxnum].bottomline == 1):
+                return False, "line already taken"
+        else:
+            if(allBoxes[smallBoxnum].rightline == 1):
+                return False, "line already taken"
+    elif(bigBoxnum != -1):
+        if(horv == "h"):
+            if(allBoxes[bigBoxnum].topline == 1):
+                return False, "line already taken"
+        else:
+            if(allBoxes[bigBoxnum].leftline == 1):
+                return False, "line already taken"
 
     return True, "all good"
     
     ## return true if valid move, false if not
+
+def findBoxNumber(one, two, three, four):
+    if(one == three): ##if horizontal line
+        smallx, smally = getSmallerHorizCoord(one,two,three,four)
+        if(one == 0 or one == 9): ##if edge line
+            if(one == 0):
+                bigBoxnum = 9*smallx + smally
+                return -1, bigBoxnum, "h"
+
+            else:
+                smallBoxnum = 9*(smallx-1)+smally
+                return smallBoxnum, -1, "h"
+                
+        else:
+            bigBoxnum = 9*smallx + smally
+            smallBoxnum = 9*(smallx-1)+smally
+            return smallBoxnum, bigBoxnum, "h"
+    else:
+        smallx, smally = getSmallerVertCoord(one,two,three,four)
+        if (two == 0 or two == 9):
+            if(two==0):
+                bigBoxnum = 9*smallx+smally
+                return -1, bigBoxnum, "v"
+            else:
+                smallBoxnum = 9*smallx + (smally-1)
+                return smallBoxnum, -1, "v"
+        else:
+            bigBoxnum = 9*smallx+smally
+            smallBoxnum = 9*smallx + (smally-1)
+            return smallBoxnum, bigBoxnum, "v"
 
 def getSmallerHorizCoord(one,two,three,four):
     if (two<four):
@@ -106,45 +151,25 @@ def getSmallerVertCoord(one,two,three,four):
 ## move is the full move with the name of the player
 def updateInternalGame(move):
     player, justmove = splitMove(move)
-    bigBoxnum = -1
-    smallBoxnum = -1
     one,two,three,four = individualCoords(justmove)
-    if(one == three): ##if horizontal line
-        smallx, smally = getSmallerHorizCoord(one,two,three,four)
-        if(one == 0 or one == 9): ##if edge line
-            if(one == 0):
-                bigBoxnum = 9*smallx + smally
-                allBoxes[bigBoxnum].topline = 1 #set line in box to occupied
-
-            else:
-                smallBoxnum = 9*(smallx-1)+smally
-                allBoxes[smallBoxnum].bottomline = 1 #set line in box to occupied
-        else:
-            bigBoxnum = 9*smallx + smally
-            allBoxes[bigBoxnum].topline = 1 #set line in box to occupied
-            smallBoxnum = 9*(smallx-1)+smally
-            allBoxes[smallBoxnum].bottomline = 1 #set line in box to occupied
-    else:
-        smallx, smally = getSmallerVertCoord(one,two,three,four)
-        if (two == 0 or two == 9):
-            if(two==0):
-                bigBoxnum = 9*smallx+smally
-                allBoxes[bigBoxnum].leftline = 1 #set line in box to occupied
-            else:
-                smallBoxnum = 9*smallx + (smally-1)
-                allBoxes[smallBoxnum].rightline = 1 #set line in box to occupied
-        else:
-            bigBoxnum = 9*smallx+smally
-            allBoxes[bigBoxnum].leftline = 1 #set line in box to occupied
-            smallBoxnum = 9*smallx + (smally-1)
-            allBoxes[smallBoxnum].rightline = 1 #set line in box to occupied
+    
+    smallBoxnum, bigBoxnum, horv = findBoxNumber(one,two,three,four)
 
     ##updated who holds the box if now a full box
+    # update the lines that are now occupied
     if(bigBoxnum != -1):
-        if(allBoxes[bigBoxnum].isFullBox):
+        if(horv == "h"):
+            allBoxes[bigBoxnum].topline = 1
+        elif(horv == "v"):
+            allBoxes[bigBoxnum].leftline = 1
+        if(allBoxes[bigBoxnum].isFullBox()):
             allBoxes[bigBoxnum].heldBy = player
     if(smallBoxnum != -1):
-        if(allBoxes[smallBoxnum].isFullBox):
+        if(horv == "h"):
+            allBoxes[smallBoxnum].bottomline = 1
+        elif(horv == "v"):
+            allBoxes[smallBoxnum].rightline = 1
+        if(allBoxes[smallBoxnum].isFullBox()):
             allBoxes[smallBoxnum].heldBy = player
     
 
@@ -156,7 +181,7 @@ def calculateFirstMove():
     moveFileWrite = open(movePath, "w")
     moveFileWrite.write("theDestroyer 1,3 2,3")
     moveFileWrite.close()
-    time.sleep(0.1)
+    time.sleep(0.2)
 
 ## calculate move
 def calculateMove():
@@ -164,7 +189,7 @@ def calculateMove():
     moveFileWrite = open(movePath, "w")         #will delete these later
     moveFileWrite.write("theDestroyer 2,2 2,1")
     moveFileWrite.close()
-    time.sleep(0.1)
+    time.sleep(0.2)
     ##to be implemented
     ##return move that our player is making
 
@@ -174,7 +199,7 @@ def writeToMoveFile(move):
     moveFileWrite = open(movePath, "w")
     moveFileWrite.write("theDestroyer " + move)
     moveFileWrite.close()
-    time.sleep(0.1)     ## need to account for time for the ref to see the change in file
+    time.sleep(0.2)     ## need to account for time for the ref to see the change in file
 ## wait for change (added files) in directory
 
 def passMove():
@@ -190,18 +215,17 @@ def passMove():
 
 def main():
     print("here")
-    check = checkValidMove("1,2 3,4") #false        
-    print(check)
-    print(checkValidMove("-1,1 2,1"))   #false
-    print(checkValidMove("0,1 2,1")) #false
-    print(checkValidMove("8,8 8,9")) #true
-    print(checkValidMove("8,10 8,9")) #false
-    print(checkValidMove("6,8 8,9")) #false 
-    print(checkValidMove("1,1 2,2")) #false
 
     for i in range (0,81):
         allBoxes.append(Box(i))
-        
+
+    updateInternalGame("me 2,1 2,2")
+    updateInternalGame("me 4,2 3,2")
+    updateInternalGame("me 0,0 0,1")
+    updateInternalGame("me 0,9 1,9")
+    updateInternalGame("me 0,9 0,8")
+    updateInternalGame("me 0,8 1,8")
+    updateInternalGame("me 1,9 1,8")
 
     while not endPath.exists():
         while not goPath.exists():
