@@ -35,6 +35,8 @@ class Box:
         if(self.topline ==1):
             count+=1
         return count
+    
+
 
 goPath = Path("theDestroyer.go")
 movePath = Path("move_file")
@@ -42,17 +44,26 @@ endPath = Path("end_game")
 passPath = Path("theDestroyer.pass")
 gameBoard = np.full((9,9), 0)
 allBoxes = []
+#make an array for boxes that have 3 lines filled
+########################################################
 
-## look for .go files in directory
+#copyBoard is a copy of the board to go through testing a new move
+#if i go here how many points do i get
+def evalFunction(copyBoard):
+    #count points for us if we hold a box
+    aiPoints = 0
+    opponent = 0
+    for box in allBoxes:
+        if(box.heldBy == "theDestroyer"):
+            aiPoints+=1
+        elif(box.heldBy != ""):
+            opponent+=1
+    score = aiPoints-opponent
+    #count points for them if they hold a box
+    return score
+    #return difference in points aipts-opponentpts
 
-### if .go then our turn
-### if .pass then skip our turn - 
-    ## read other players move
-    ## write in move file fake move: theDestroyer 0,0 0,0
-### if end_game file created - it is the end of the game
 
-
-## read move_file (if empty then first player)
 
 ## cut off other teams name in their move
 #     returns just the player, and coordinates of the move
@@ -289,12 +300,13 @@ def main():
                 print(justTheirMove)
                 if(justTheirMove == "0,0 0,0"):
                     calculateMove()
-                isValid, reason = checkValidMove(justTheirMove)
-                if(isValid):
-                    updateInternalGame(theirMove)
-                    calculateMove()
                 else:
-                    print(player + " lost the game because "+ reason)
+                    isValid, reason = checkValidMove(justTheirMove)
+                    if(isValid):
+                        updateInternalGame(theirMove)
+                        calculateMove()
+                    else:
+                        print(player + " lost the game because "+ reason)
 
 
 if __name__ == "__main__":
