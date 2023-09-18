@@ -7,11 +7,27 @@ from pathlib import Path
 import time
 import numpy as np
 
+class Box:
+    def __init__(self, boxnum):
+        self.boxNumber = boxnum
+        self.heldBy = "" #name of owner if all four lines filled
+        self.leftline = 0 # 1 if filled
+        self.topline = 0
+        self.rightline = 0
+        self.bottomline = 0
+
+    def isFullBox(self):
+        if(self.leftline ==1 and self.topline == 1 and self.bottomline ==1 and self.rightline ==1):
+            return True
+        else:
+            return False
+
 goPath = Path("theDestroyer.go")
 movePath = Path("move_file")
 endPath = Path("end_game")
 passPath = Path("theDestroyer.pass")
-gameBoard = np.full((10,10), 0)
+gameBoard = np.full((9,9), 0)
+allBoxes = []
 
 ## look for .go files in directory
 
@@ -25,16 +41,14 @@ gameBoard = np.full((10,10), 0)
 ## read move_file (if empty then first player)
 
 ## cut off other teams name in their move
-#     returns just the coordinates of the move
-def justMove(fullMove):
+#     returns just the player, and coordinates of the move
+def splitMove(fullMove):
     space = fullMove.find(" ")
     onlyMove = fullMove[space+1:]
-    return onlyMove
+    justPlayer = fullMove[:space]
+    return justPlayer, onlyMove
 
-## check if valid move
-    #move is just the coordinates string
-def checkValidMove(move):
-    ##to be implemented
+def individualCoords(move):
     space = move.find(" ")
     first = move[:space]
     second = move[space+1:]
@@ -44,6 +58,13 @@ def checkValidMove(move):
     two = int(first[commaone+1:])
     three = int(second[:commatwo])
     four = int(second[commatwo+1:])
+    return one,two,three,four
+
+## check if valid move
+    #move is just the coordinates string
+def checkValidMove(coordmove):
+    ##to be implemented
+    one,two,three,four = individualCoords(coordmove)
 
     ##checking if outside the board
     if (one<0 or two<0 or three<0 or four<0):
@@ -69,9 +90,64 @@ def checkValidMove(move):
     
     ## return true if valid move, false if not
 
+def getSmallerHorizCoord(one,two,three,four):
+    if (two<four):
+        return one,two
+    else:
+        return three,four
+    
+def getSmallerVertCoord(one,two,three,four):
+    if (one<three):
+        return one,two
+    else:
+        return three,four
+
 ## write moves to our game board
-def internalGame(move):
-    move
+## move is the full move with the name of the player
+def updateInternalGame(move):
+    player, justmove = splitMove(move)
+    bigBoxnum = -1
+    smallBoxnum = -1
+    one,two,three,four = individualCoords(justmove)
+    if(one == three): ##if horizontal line
+        smallx, smally = getSmallerHorizCoord(one,two,three,four)
+        if(one == 0 or one == 9): ##if edge line
+            if(one == 0):
+                bigBoxnum = 9*smallx + smally
+                allBoxes[bigBoxnum].topline = 1 #set line in box to occupied
+
+            else:
+                smallBoxnum = 9*(smallx-1)+smally
+                allBoxes[smallBoxnum].bottomline = 1 #set line in box to occupied
+        else:
+            bigBoxnum = 9*smallx + smally
+            allBoxes[bigBoxnum].topline = 1 #set line in box to occupied
+            smallBoxnum = 9*(smallx-1)+smally
+            allBoxes[smallBoxnum].bottomline = 1 #set line in box to occupied
+    else:
+        smallx, smally = getSmallerVertCoord(one,two,three,four)
+        if (two == 0 or two == 9):
+            if(two==0):
+                bigBoxnum = 9*smallx+smally
+                allBoxes[bigBoxnum].leftline = 1 #set line in box to occupied
+            else:
+                smallBoxnum = 9*smallx + (smally-1)
+                allBoxes[smallBoxnum].rightline = 1 #set line in box to occupied
+        else:
+            bigBoxnum = 9*smallx+smally
+            allBoxes[bigBoxnum].leftline = 1 #set line in box to occupied
+            smallBoxnum = 9*smallx + (smally-1)
+            allBoxes[smallBoxnum].rightline = 1 #set line in box to occupied
+
+    ##updated who holds the box if now a full box
+    if(bigBoxnum != -1):
+        if(allBoxes[bigBoxnum].isFullBox):
+            allBoxes[bigBoxnum].heldBy = player
+    if(smallBoxnum != -1):
+        if(allBoxes[smallBoxnum].isFullBox):
+            allBoxes[smallBoxnum].heldBy = player
+    
+
     ##to be implemented
     ##return true if successfully wrote move to board, false otherwise
 
@@ -104,12 +180,13 @@ def writeToMoveFile(move):
 def passMove():
     closedBoxFile= open(movePath, "r")
     closedBoxSpot = closedBoxFile.read()
-    internalGame(closedBoxSpot)
+    updateInternalGame(closedBoxSpot)
     closedBoxFile.close()
     writePassFile = open(movePath, "w")
     writePassFile.write("theDestoyer 0,0 0,0")
     writePassFile.close()
     time.sleep(0.1)
+
 
 def main():
     print("here")
@@ -121,6 +198,10 @@ def main():
     print(checkValidMove("8,10 8,9")) #false
     print(checkValidMove("6,8 8,9")) #false 
     print(checkValidMove("1,1 2,2")) #false
+
+    for i in range (0,81):
+        allBoxes.append(Box(i))
+        
 
     while not endPath.exists():
         while not goPath.exists():
@@ -137,10 +218,14 @@ def main():
             else:
                 theirMove = moveFile.read()
                 moveFile.close()
-                justTheirMove = justMove(theirMove)
+                player, justTheirMove = splitMove(theirMove)
                 print(justTheirMove)
-                isValid = checkValidMove(justTheirMove)
-                calculateMove()
+                isValid, reason = checkValidMove(justTheirMove)
+                if(isValid):
+                    updateInternalGame(theirMove)
+                    calculateMove()
+                else:
+                    print(player + "lost the game because "+ reason)
 
 
 if __name__ == "__main__":
