@@ -244,9 +244,14 @@ def passMove():
 # state is the current state of the board being looked into
 #next
 # 4 layers to start
-def minimax(state, depth, max_min):
+def minimax(state, depth, isMax):
     #makes a copy of the current board state to manipulate
     copyOfBoard = allBoxes
+
+    if (isMax):
+        bestMove = (-10000, None)
+    else:
+        bestMove = (10000, None)
 
     if (depth==0): # add check that all moves are taken somewhere
         return evalFunction(state) # this will return the possible score of this route
@@ -256,16 +261,31 @@ def minimax(state, depth, max_min):
         if (not box.isFullBox()):
             if (box.leftline == 0):
                 box.leftline = 1
-                minimax(copyOfBoard, depth-1, not max_min)
+                bestMove = compare(minimax(copyOfBoard, depth-1, not isMax), bestMove, isMax)
             elif (box.topline == 0):
                 box.topline = 1
-                minimax(copyOfBoard, depth-1, not max_min)
+                bestMove = compare(minimax(copyOfBoard, depth-1, not isMax), bestMove, isMax)
             elif (box.rightline == 0):
                 box.rightline = 1
-                minimax(copyOfBoard, depth-1, not max_min)
+                bestMove = compare(minimax(copyOfBoard, depth-1, not isMax), bestMove, isMax)
             elif (box.bottomline == 0):
                 box.bottomline = 1
-                minimax(copyOfBoard, depth-1, not max_min)
+                bestMove = compare(minimax(copyOfBoard, depth-1, not isMax), bestMove, isMax)
+    
+    return bestMove[0]
+
+# based on what kayer compares best move accordingly
+def compare(score, bestMove, isMax):
+    if (isMax):
+        if (score > bestMove[0]):
+            bestMove[0] = score
+            return bestMove
+            # add thing to account for coordinates of move
+    else:
+        if( score < bestMove[0]):
+            bestMove[0] = score
+            return bestMove
+
 
 ## utility function that determines if ai has more than the other player in points for temrinal moves
 def utility():
