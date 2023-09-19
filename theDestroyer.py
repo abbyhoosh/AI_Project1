@@ -35,8 +35,6 @@ class Box:
         if(self.topline ==1):
             count+=1
         return count
-    
-
 
 goPath = Path("theDestroyer.go")
 movePath = Path("move_file")
@@ -63,10 +61,8 @@ def evalFunction(copyBoard):
     return score
     #return difference in points aipts-opponentpts
 
-
-
 ## cut off other teams name in their move
-#     returns just the player, and coordinates of the move
+# returns just the player, and coordinates of the move
 def splitMove(fullMove):
     space = fullMove.find(" ")
     onlyMove = fullMove[space+1:]
@@ -244,17 +240,32 @@ def passMove():
     writePassFile.close()
     time.sleep(0.1)
 
-## 4 layers to start
-def minimax(state, next, depth, max_min):
-    if (depth==0 or next.length==0):
-        ##then say it's done and return something
-        return state
+# minimax algorithim implementation
+# state is the current state of the board being looked into
+#next
+# 4 layers to start
+def minimax(state, depth, max_min):
+    #makes a copy of the current board state to manipulate
+    copyOfBoard = allBoxes
+
+    if (depth==0): # add check that all moves are taken somewhere
+        return evalFunction(state) # this will return the possible score of this route
     
-    ## changes comparable value whether it is a max or min layer true is max layer
-    if (max_min):
-        bestMove = (-10000, None)
-    else:
-        bestMove = (None, 10000)
+    #goes through and checks if the box is full, if not it finds the first available side to start on
+    for box in copyOfBoard:
+        if (not box.isFullBox()):
+            if (box.leftline == 0):
+                box.leftline = 1
+                minimax(copyOfBoard, depth-1, not max_min)
+            elif (box.topline == 0):
+                box.topline = 1
+                minimax(copyOfBoard, depth-1, not max_min)
+            elif (box.rightline == 0):
+                box.rightline = 1
+                minimax(copyOfBoard, depth-1, not max_min)
+            elif (box.bottomline == 0):
+                box.bottomline = 1
+                minimax(copyOfBoard, depth-1, not max_min)
 
 ## utility function that determines if ai has more than the other player in points for temrinal moves
 def utility():
