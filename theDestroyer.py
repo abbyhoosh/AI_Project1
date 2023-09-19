@@ -41,17 +41,36 @@ endPath = Path("end_game")
 passPath = Path("theDestroyer.pass")
 gameBoard = np.full((9,9), 0)
 allBoxes = []
+threeLineBoxes = []
 #make an array for boxes that have 3 lines filled
 #maybe just order the array based of of that factor?? 3 first then 1 then 0 then 2?
+#i'm thinking 3 separate arrays might be easier for sorting purposes
 ########################################################
+
+def addToBoxArr(boxnum):
+    count = allBoxes[boxnum].countFilledSides()
+    if(count == 3):
+        threeLineBoxes.append(allBoxes[boxnum])
+        print("three line boxes:")
+        for box in threeLineBoxes:
+            print(box.boxNumber)
+        print("end")
+    elif(count == 4):
+        idx = 0
+        for box in threeLineBoxes:
+            if box.boxNumber == boxnum:
+                break
+            idx +=1
+        threeLineBoxes.pop(idx)
+        print("fullbox")
+
 
  #checks if board is full
 def isFullBoard(board):
-        for box in board:
-            if box.isFullBox is False:
-                return False
-            else:
-                return True
+    for box in board:
+        if not(box.isFullBox()):
+            return False
+    return True
 #copyBoard is a copy of the board to go through testing a new move
 #if i go here how many points do i get
 def evalFunction(copyBoard):
@@ -194,6 +213,7 @@ def updateInternalGame(move):
             allBoxes[bigBoxnum].filledCount +=1
         if(allBoxes[bigBoxnum].isFullBox()):
             allBoxes[bigBoxnum].heldBy = player
+        addToBoxArr(bigBoxnum)
     if(smallBoxnum != -1):
         if(horv == "h"):
             allBoxes[smallBoxnum].bottomline = 1
@@ -203,6 +223,7 @@ def updateInternalGame(move):
             allBoxes[smallBoxnum].filledCount +=1
         if(allBoxes[smallBoxnum].isFullBox()):
             allBoxes[smallBoxnum].heldBy = player
+        addToBoxArr(smallBoxnum)
     
 
     ##to be implemented
@@ -213,15 +234,15 @@ def calculateFirstMove():
     moveFileWrite = open(movePath, "w")
     moveFileWrite.write("theDestroyer 1,3 2,3")
     moveFileWrite.close()
-    time.sleep(0.2)
+    time.sleep(0.8)
 
 ## calculate move
 def calculateMove():
-    calculate = 1
+    #minimax()
     moveFileWrite = open(movePath, "w")         #will delete these later
     moveFileWrite.write("theDestroyer 2,2 2,1")
     moveFileWrite.close()
-    time.sleep(0.2)
+    time.sleep(0.8)
     ##to be implemented
     ##return move that our player is making
 
@@ -252,6 +273,7 @@ def passMove():
 # isMax says whether this is a max or min layer
 # 4 layers to start
 def minimax(state, depth, isMax):
+    print("uphere")
     #makes a copy of the current board state to manipulate
     copyOfBoard = allBoxes.copy()
 
@@ -261,10 +283,12 @@ def minimax(state, depth, isMax):
         bestMove = (10000, None)
 
     if (depth==0): # add check that all moves are taken somewhere
+        print("depth = 0 true")
         return evalFunction(state) # this will return the possible score of this route
     if (isFullBoard(state)):
+        print("isfullboardtrue")
         return utility(state) #returns what the final score would be
-
+    print("in here")
     
     #goes through and checks if the box is full, if not it finds the first available side to start on
     for box in copyOfBoard:
@@ -289,8 +313,10 @@ def minimax(state, depth, isMax):
                 bestMove = compare(minimax(copyOfBoard, depth-1, not isMax), bestMove, isMax)
     
     # Question--> we only need the number for most of this but need to return coordinates
-    # for the last one is ther a ay to get coordinates from the boxes so just bestMove can be returned
+    # for the last one is there a way to get coordinates from the boxes so just bestMove can be returned
     # with the move? idk if that makes sense.
+    print("Bestmove:")
+    print(bestMove[0])
     return bestMove[0]
 
 # based on what kayer compares best move accordingly
@@ -316,12 +342,41 @@ def utility(board):
     score = aiPoints - opponentPoints
     return score 
 
+#takes a box number and the side of the box that the line is on and 
+#returns the coordinates of that line in a string
+#for boxside:
+# t = topline, b = bottomline, r = rightline, l = leftline
+def convertBoxToLine(boxnumber, boxside):
+    if(boxside == "r" or boxside == "l"):
+        smallx = boxnumber//9
+        smally = boxnumber%9
+        if(boxside == "r"):
+            smally +=1
+        bigx = smallx+1
+        bigy = smally
+    elif(boxside == "b" or boxside == "t"):
+        if(boxside == "b"):
+            boxnumber+=9
+        smallx = boxnumber//9
+        smally = boxnumber%9
+        bigy = smally+1
+        bigx = smallx
+    coords = str(smallx) +","+str(smally)+" "+str(bigx)+","+str(bigy)
+    return coords
+
+
 def main():
     print("here")
 
     for i in range (0,81):
         allBoxes.append(Box(i))
 
+    print(convertBoxToLine(80, "t"))
+    print(convertBoxToLine(80, "b"))
+    print(convertBoxToLine(80, "r"))
+    print(convertBoxToLine(80, "l"))
+    minimax(allBoxes, 4, True)
+    ''''
     updateInternalGame("me 2,1 2,2")
     updateInternalGame("me 4,2 3,2")
     updateInternalGame("me 0,0 0,1")
@@ -329,6 +384,7 @@ def main():
     updateInternalGame("me 0,9 0,8")
     updateInternalGame("me 0,8 1,8")
     updateInternalGame("me 1,9 1,8")
+    '''
 
     while not endPath.exists():
         while not goPath.exists():
@@ -338,7 +394,7 @@ def main():
 
         if passPath.exists():
             passMove()
-        elif movePath.exists() and goPath.exists():
+        elif (movePath.exists() and goPath.exists()):
             moveFile = open(movePath, "r") ##can read the move file
             if (os.path.getsize(movePath) == 0): ## if move file is empty
                 moveFile.close()        ##needs to close read only and open write only to overwrite
@@ -347,16 +403,23 @@ def main():
                 theirMove = moveFile.read()
                 moveFile.close()
                 player, justTheirMove = splitMove(theirMove)
-                print(justTheirMove)
-                if(justTheirMove == "0,0 0,0"):
-                    calculateMove()
+                if(player == "theDestroyer"):
+                    time.sleep(0.1)
+                    print(player)
+                    print("sleeping...")
                 else:
-                    isValid, reason = checkValidMove(justTheirMove)
-                    if(isValid):
-                        updateInternalGame(theirMove)
+                    print(player)
+                    print(justTheirMove)
+                    print("their move")
+                    if(justTheirMove == "0,0 0,0"):
                         calculateMove()
                     else:
-                        print(player + " lost the game because "+ reason)
+                        isValid, reason = checkValidMove(justTheirMove)
+                        if(isValid):
+                            updateInternalGame(theirMove)
+                            calculateMove()
+                        else:
+                            print(player + " lost the game because "+ reason)
 
 
 if __name__ == "__main__":
