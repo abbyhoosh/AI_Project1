@@ -35,7 +35,6 @@ class Box:
         if(self.topline ==1):
             count+=1
         return count
-
 goPath = Path("theDestroyer.go")
 movePath = Path("move_file")
 endPath = Path("end_game")
@@ -43,8 +42,16 @@ passPath = Path("theDestroyer.pass")
 gameBoard = np.full((9,9), 0)
 allBoxes = []
 #make an array for boxes that have 3 lines filled
+#maybe just order the array based of of that factor?? 3 first then 1 then 0 then 2?
 ########################################################
 
+ #checks if board is full
+def isFullBoard(board):
+        for box in board:
+            if box.isFullBox is False:
+                return False
+            else:
+                return True
 #copyBoard is a copy of the board to go through testing a new move
 #if i go here how many points do i get
 def evalFunction(copyBoard):
@@ -242,11 +249,11 @@ def passMove():
 
 # minimax algorithim implementation
 # state is the current state of the board being looked into
-#next
+# isMax says whether this is a max or min layer
 # 4 layers to start
 def minimax(state, depth, isMax):
     #makes a copy of the current board state to manipulate
-    copyOfBoard = allBoxes
+    copyOfBoard = allBoxes.copy()
 
     if (isMax):
         bestMove = (-10000, None)
@@ -255,12 +262,21 @@ def minimax(state, depth, isMax):
 
     if (depth==0): # add check that all moves are taken somewhere
         return evalFunction(state) # this will return the possible score of this route
+    if (isFullBoard(state)):
+        return utility(state) #returns what the final score would be
+
     
     #goes through and checks if the box is full, if not it finds the first available side to start on
     for box in copyOfBoard:
+        # checks if box if sull (bc then we don't need to check it)
         if (not box.isFullBox()):
+            #checks each side of box to see if full and gos down first come first serve type beat
             if (box.leftline == 0):
-                box.leftline = 1
+                #if it's empty make it full
+                box.leftline = 1 
+                #recursivley call function with new cope of the game board to keep going down
+                # when evalFunction is returned it decides is that is better than the current best move
+                # replaces it with either new move or samve move and continues
                 bestMove = compare(minimax(copyOfBoard, depth-1, not isMax), bestMove, isMax)
             elif (box.topline == 0):
                 box.topline = 1
@@ -272,6 +288,9 @@ def minimax(state, depth, isMax):
                 box.bottomline = 1
                 bestMove = compare(minimax(copyOfBoard, depth-1, not isMax), bestMove, isMax)
     
+    # Question--> we only need the number for most of this but need to return coordinates
+    # for the last one is ther a ay to get coordinates from the boxes so just bestMove can be returned
+    # with the move? idk if that makes sense.
     return bestMove[0]
 
 # based on what kayer compares best move accordingly
@@ -288,8 +307,8 @@ def compare(score, bestMove, isMax):
 
 
 ## utility function that determines if ai has more than the other player in points for temrinal moves
-def utility():
-    for box in allBoxes:
+def utility(board):
+    for box in board:
         aiPoints = 0
         if (box.heldBy == "theDestroyer"):
             aiPoints += 1
