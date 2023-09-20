@@ -66,6 +66,10 @@ def findBoxNumber(one, two, three, four):
 #for boxside:
 # t = topline, b = bottomline, r = rightline, l = leftline
 def convertBoxToLine(boxnumber, boxside):
+    smallx = 0
+    smally = 0
+    bigx = 0
+    bigy = 0
     if(boxside == "r" or boxside == "l"):
         smallx = boxnumber//9
         smally = boxnumber%9
