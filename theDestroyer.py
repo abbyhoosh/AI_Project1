@@ -149,6 +149,7 @@ def individualCoords(move):
 ## check if valid move
     #move is just the coordinates string
 def checkValidMove(coordmove):
+    print("checing valid")
     one,two,three,four = individualCoords(coordmove)
 
     ##checking if outside the board
@@ -246,7 +247,7 @@ def calculateFirstMove():
 ## calculate move
 def calculateMove():
     copyboard = copy.deepcopy(allBoxes)
-    bestScore, bestBoxnum, bestSide = minimax2(1, copyboard, True, -10000, 10000, 3)
+    bestScore, bestBoxnum, bestSide = minimax2(0, copyboard, True, -10000, 10000, 3)
     coords = convertBoxToLine(bestBoxnum, bestSide)
     updateInternalGame("theDestroyer "+coords)
     writeToMoveFile(coords)
@@ -293,7 +294,6 @@ def compare(score, bestMove, isMax):
 
 ## Eval Function for if i go here how many points do i get
 def evalFunction(copyBoard):
-    print("enter eval function")
     aiPoints = 0
     opponent = 0
     for box in copyBoard:
@@ -303,8 +303,10 @@ def evalFunction(copyBoard):
         elif(box.heldBy != "" and box.heldBy != "theDestroyer"):
             print(box.heldBy)
             opponent+=1
-    print("end Eval")
     score = aiPoints-opponent
+    
+    print("Eval score")
+    print(score)
     return score #return difference in points aipts-opponentpts
 
 ## Utility function that determines if ai has more than the other player in points for terminal moves
@@ -326,21 +328,19 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
     bestBox = -1
     bestSide = ""
     if(depth == maxdepth):
+        print("BOXNUM")
+        print(box.boxNumber)
         return evalFunction(state), -1, ""
     if(isMax):
         best = MIN
         for box in state:
             if (not box.isFullBox()):
-                print("BOXNUM")
-                print(box.boxNumber)
                 if(box.leftline == 0):
-                    print("MAX left line, the depth is ")
-                    print(depth)
                     box.leftline = 1
                     #the held by was only being updated when in the update internal game
                     # so we needed to live update it
                     if box.isFullBox():
-                        box.heldBy = "theDestroyer"
+                        box.heldBy = "opp"
                     currSide = "l"
                     val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
                     # this si to reset the values so the board doesnt continue with those values
@@ -355,11 +355,9 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     if(beta<=alpha):
                         break
                 elif(box.topline == 0):
-                    print("MAX topline the depth is ")
-                    print(depth)
                     box.topline = 1
                     if box.isFullBox():
-                        box.heldBy = "theDestroyer"
+                        box.heldBy = "opp"
                     currSide = "t"
                     val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
                     box.topline = 0
@@ -372,11 +370,9 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     if(beta<=alpha):
                         break
                 elif(box.bottomline == 0):
-                    print("MAX bottomline the depth is ")
-                    print(depth)
                     box.bottomline = 1
                     if box.isFullBox():
-                        box.heldBy = "theDestroyer"
+                        box.heldBy = "opp"
                     currSide = "b"
                     val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
                     box.bottomline = 0
@@ -389,11 +385,9 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     if(beta<=alpha):
                         break
                 else:
-                    print("MAX rightline the depth is ")
-                    print(depth)
                     box.rightline = 1
                     if box.isFullBox():
-                        box.heldBy = "theDestroyer"
+                        box.heldBy = "opp"
                     currSide = "r"
                     val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
                     box.rightline = 0
@@ -419,11 +413,9 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
         for box in state:
             if (not box.isFullBox()):
                 if(box.leftline == 0):
-                    print("MIN leftline the depth is ")
-                    print(depth)
                     box.leftline = 1
                     if box.isFullBox():
-                        box.heldBy = "opp"
+                        box.heldBy = "theDestroyer"
                     currSide = "l"
                     val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
                     box.leftline = 0
@@ -437,11 +429,9 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     if(beta<=alpha):
                         break
                 elif(box.topline == 0):
-                    print("MIN topline the depth is ")
-                    print(depth)
                     box.topline = 1
                     if box.isFullBox():
-                        box.heldBy = "opp"
+                        box.heldBy = "theDestroyer"
                     currSide = "t"
                     val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
                     box.topline = 0
@@ -455,11 +445,9 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     if(beta<=alpha):
                         break
                 elif(box.bottomline == 0):
-                    print("MIN bottomline the depth is ")
-                    print(depth)
                     box.bottomline = 1
                     if box.isFullBox():
-                        box.heldBy = "opp"
+                        box.heldBy = "theDestroyer"
                     currSide = "b"
                     val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
                     box.bottomline = 0
@@ -473,11 +461,9 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     if(beta<=alpha):
                         break
                 else:
-                    print("MIN rightline the depth is ")
-                    print(depth)
                     box.rightline = 1
                     if box.isFullBox():
-                        box.heldBy = "opp"
+                        box.heldBy = "theDestroyer"
                     currSide = "r"
                     val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
                     box.rightline = 0
