@@ -47,10 +47,10 @@ allBoxes = []
 threeLineBoxes = []
 ########################################################
 
-def addToBoxArr(boxnum):
-    count = allBoxes[boxnum].countFilledSides()
+def addToBoxArr(boxnum, arr):
+    count = arr[boxnum].countFilledSides()
     if(count == 3):
-        threeLineBoxes.append(allBoxes[boxnum])
+        threeLineBoxes.append(arr[boxnum])
         print("three line boxes:")
         for box in threeLineBoxes:
             print(box.boxNumber)
@@ -149,7 +149,7 @@ def individualCoords(move):
 ## check if valid move
     #move is just the coordinates string
 def checkValidMove(coordmove):
-    print("checing valid")
+    print("checking valid")
     one,two,three,four = individualCoords(coordmove)
 
     ##checking if outside the board
@@ -205,7 +205,6 @@ def getSmallerVertCoord(one,two,three,four):
     
 #_________________________________BOARD GAME UPDATES__________________________________________________
 
-## write moves to our game board
 ## move is the full move with the name of the player
 def updateInternalGame(move):
     player, justmove = splitMove(move)
@@ -219,18 +218,22 @@ def updateInternalGame(move):
         if(horv == "h"):
             allBoxes[bigBoxnum].topline = 1
             allBoxes[bigBoxnum].filledCount +=1
+            addToBoxArr(bigBoxnum, allBoxes)
         elif(horv == "v"):
             allBoxes[bigBoxnum].leftline = 1
             allBoxes[bigBoxnum].filledCount +=1
+            addToBoxArr(bigBoxnum, allBoxes)
         if(allBoxes[bigBoxnum].isFullBox()):
             allBoxes[bigBoxnum].heldBy = player
     if(smallBoxnum != -1):
         if(horv == "h"):
             allBoxes[smallBoxnum].bottomline = 1
             allBoxes[smallBoxnum].filledCount +=1
+            addToBoxArr(smallBoxnum, allBoxes)
         elif(horv == "v"):
             allBoxes[smallBoxnum].rightline = 1
             allBoxes[smallBoxnum].filledCount +=1
+            addToBoxArr(smallBoxnum, allBoxes)
         if(allBoxes[smallBoxnum].isFullBox()):
             allBoxes[smallBoxnum].heldBy = player
     
@@ -247,7 +250,7 @@ def calculateFirstMove():
 ## calculate move
 def calculateMove():
     copyboard = copy.deepcopy(allBoxes)
-    bestScore, bestBoxnum, bestSide = minimax2(0, copyboard, True, -10000, 10000, 3)
+    bestScore, bestBoxnum, bestSide = minimax2(0, copyboard, True, -10000, 10000, 2)
     coords = convertBoxToLine(bestBoxnum, bestSide)
     updateInternalGame("theDestroyer "+coords)
     writeToMoveFile(coords)
@@ -256,6 +259,8 @@ def calculateMove():
 ## write to move file
 ## move is just the string of the coordinates of the move
 def writeToMoveFile(move):
+    print("theDestroyer move:")
+    print(move)
     moveFileWrite = open(movePath, "w")
     moveFileWrite.write("theDestroyer " + move)
     moveFileWrite.close()
@@ -298,15 +303,15 @@ def evalFunction(copyBoard):
     opponent = 0
     for box in copyBoard:
         if(box.heldBy == "theDestroyer"):
-            print(box.heldBy)
+            #print(box.heldBy)
             aiPoints+=1
         elif(box.heldBy != "" and box.heldBy != "theDestroyer"):
-            print(box.heldBy)
+            #print(box.heldBy)
             opponent+=1
     score = aiPoints-opponent
     
-    print("Eval score")
-    print(score)
+    #print("Eval score")
+    #print(score)
     return score #return difference in points aipts-opponentpts
 
 ## Utility function that determines if ai has more than the other player in points for terminal moves
@@ -319,6 +324,40 @@ def utility(board):
     score = aiPoints - opponentPoints
     return score 
 
+def updateCopyGame(move, copyboard, num):
+    #num is 0 or 1
+        #0 if deleting move on copyboard
+        #1 is adding move on copyboard
+## move is the full move with the name of the player
+    player, justmove = splitMove(move)
+    one,two,three,four = individualCoords(justmove)
+    
+    smallBoxnum, bigBoxnum, horv = findBoxNumber(one,two,three,four)
+
+    ##updated who holds the box if now a full box
+    # update the lines that are now occupied
+    if(bigBoxnum != -1):
+        if(horv == "h"):
+            copyboard[bigBoxnum].topline = num
+            #addToBoxArr(bigBoxnum, copyboard)
+        elif(horv == "v"):
+            copyboard[bigBoxnum].leftline = num
+            #addToBoxArr(bigBoxnum, copyboard)
+        if(copyboard[bigBoxnum].isFullBox()):
+            copyboard[bigBoxnum].heldBy = player
+        else:
+            copyboard[bigBoxnum].heldBy = ""
+    if(smallBoxnum != -1):
+        if(horv == "h"):
+            copyboard[smallBoxnum].bottomline = num
+            #addToBoxArr(smallBoxnum, copyboard)
+        elif(horv == "v"):
+            copyboard[smallBoxnum].rightline = num
+            #addToBoxArr(smallBoxnum, copyboard)
+        if(copyboard[smallBoxnum].isFullBox()):
+            copyboard[smallBoxnum].heldBy = player
+        else:
+            copyboard[smallBoxnum].heldBy = ""
 # MINIMAX with Alpha Beta Pruning
 # state is a copy of the board
 def minimax2(depth, state, isMax, alpha, beta, maxdepth):
@@ -327,26 +366,31 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
     currSide = ""
     bestBox = -1
     bestSide = ""
+    best = 0
     if(depth == maxdepth):
-        print("BOXNUM")
-        print(box.boxNumber)
+        #print("BOXNUM")
+        #print(box.boxNumber)
         return evalFunction(state), -1, ""
     if(isMax):
         best = MIN
         for box in state:
             if (not box.isFullBox()):
                 if(box.leftline == 0):
-                    box.leftline = 1
+                    coords = convertBoxToLine(box.boxNumber, "l")
+                    fullmove = "theDestroyer "+coords
+                    updateCopyGame(fullmove, state, 1)
+                    #box.leftline = 1
                     #the held by was only being updated when in the update internal game
                     # so we needed to live update it
-                    if box.isFullBox():
-                        box.heldBy = "opp"
+                    #if box.isFullBox():
+                    #    box.heldBy = "theDestroyer"
                     currSide = "l"
                     val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
                     # this si to reset the values so the board doesnt continue with those values
                     # when it's trying to try the next option
-                    box.leftline = 0
-                    box.heldBy = ""
+                    updateCopyGame(fullmove, state, 0)
+                    #box.leftline = 0
+                    #box.heldBy = ""
                     if(val>best):
                         bestBox = box.boxNumber
                         bestSide = currSide
@@ -354,14 +398,18 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     alpha = max(best, alpha)
                     if(beta<=alpha):
                         break
-                elif(box.topline == 0):
-                    box.topline = 1
-                    if box.isFullBox():
-                        box.heldBy = "opp"
+                if(box.topline == 0):
+                    coords = convertBoxToLine(box.boxNumber, "t")
+                    fullmove = "theDestroyer "+coords
+                    updateCopyGame(fullmove, state, 1)
+                    #box.topline = 1
+                    #if box.isFullBox():
+                    #    box.heldBy = "theDestoyer"
                     currSide = "t"
                     val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
-                    box.topline = 0
-                    box.heldBy = ""
+                    #box.topline = 0
+                    #box.heldBy = ""
+                    updateCopyGame(fullmove, state, 0)
                     if(val>best):
                         bestBox = box.boxNumber
                         bestSide = currSide
@@ -369,14 +417,18 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     alpha = max(best, alpha)
                     if(beta<=alpha):
                         break
-                elif(box.bottomline == 0):
-                    box.bottomline = 1
-                    if box.isFullBox():
-                        box.heldBy = "opp"
+                if(box.bottomline == 0):
+                    coords = convertBoxToLine(box.boxNumber, "b")
+                    fullmove = "theDestroyer "+coords
+                    updateCopyGame(fullmove, state, 1)
+                    #box.bottomline = 1
+                    #if box.isFullBox():
+                    #    box.heldBy = "theDestroyer"
                     currSide = "b"
                     val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
-                    box.bottomline = 0
-                    box.heldBy = ""
+                    #box.bottomline = 0
+                    #box.heldBy = ""
+                    updateCopyGame(fullmove, state, 0)
                     if(val>best):
                         bestBox = box.boxNumber
                         bestSide = currSide
@@ -384,14 +436,18 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     alpha = max(best, alpha)
                     if(beta<=alpha):
                         break
-                else:
-                    box.rightline = 1
-                    if box.isFullBox():
-                        box.heldBy = "opp"
+                if(box.rightline == 0):
+                    coords = convertBoxToLine(box.boxNumber, "r")
+                    fullmove = "theDestroyer "+coords
+                    updateCopyGame(fullmove, state, 1)
+                    #box.rightline = 1
+                    #if box.isFullBox():
+                    #    box.heldBy = "theDestroyer"
                     currSide = "r"
                     val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
-                    box.rightline = 0
-                    box.heldBy = ""
+                    #box.rightline = 0
+                    #box.heldBy = ""
+                    updateCopyGame(fullmove, state, 0)
                     if(val>best):
                         bestBox = box.boxNumber
                         bestSide = currSide
@@ -399,6 +455,7 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     alpha = max(best, alpha)
                     if(beta<=alpha):
                         break
+            print(box.boxNumber, bestBox, best, bestSide)
                 #val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
                 #print(best, val, box.boxNumber)
                 #if(val>best):
@@ -413,69 +470,82 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
         for box in state:
             if (not box.isFullBox()):
                 if(box.leftline == 0):
-                    box.leftline = 1
-                    if box.isFullBox():
-                        box.heldBy = "theDestroyer"
+                    coords = convertBoxToLine(box.boxNumber, "l")
+                    fullmove = "opp "+coords
+                    updateCopyGame(fullmove, state, 1)
+                    #box.leftline = 1
+                    #if box.isFullBox():
+                    #    box.heldBy = "opp"
                     currSide = "l"
                     val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
-                    box.leftline = 0
-                    box.heldBy = ""
+                    #box.leftline = 0
+                    #box.heldBy = ""
+                    updateCopyGame(fullmove, state, 0)
                     if(val<best):
                         bestBox = box.boxNumber
                         bestSide = currSide
                     best = min(best, val)
-                    bestBox = box.boxNumber
                     beta = min(best, beta)
                     if(beta<=alpha):
                         break
-                elif(box.topline == 0):
-                    box.topline = 1
-                    if box.isFullBox():
-                        box.heldBy = "theDestroyer"
+                if(box.topline == 0):
+                    coords = convertBoxToLine(box.boxNumber, "t")
+                    fullmove = "opp "+coords
+                    updateCopyGame(fullmove, state, 1)
+                    #box.topline = 1
+                    #if box.isFullBox():
+                    #    box.heldBy = "opp"
                     currSide = "t"
                     val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
-                    box.topline = 0
-                    box.heldBy = ""
+                    #box.topline = 0
+                    #box.heldBy = ""
+                    updateCopyGame(fullmove, state, 0)
                     if(val<best):
                         bestBox = box.boxNumber
                         bestSide = currSide
                     best = min(best, val)
-                    bestBox = box.boxNumber
                     beta = min(best, beta)
                     if(beta<=alpha):
                         break
-                elif(box.bottomline == 0):
-                    box.bottomline = 1
-                    if box.isFullBox():
-                        box.heldBy = "theDestroyer"
+                if(box.bottomline == 0):
+                    coords = convertBoxToLine(box.boxNumber, "b")
+                    fullmove = "opp "+coords
+                    updateCopyGame(fullmove, state, 1)
+                    #box.bottomline = 1
+                    #if box.isFullBox():
+                    #    box.heldBy = "opp"
                     currSide = "b"
                     val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
-                    box.bottomline = 0
-                    box.heldBy = ""
+                    #box.bottomline = 0
+                    #box.heldBy = ""
+                    updateCopyGame(fullmove, state, 0)
                     if(val<best):
                         bestBox = box.boxNumber
                         bestSide = currSide
                     best = min(best, val)
-                    bestBox = box.boxNumber
                     beta = min(best, beta)
                     if(beta<=alpha):
                         break
-                else:
-                    box.rightline = 1
-                    if box.isFullBox():
-                        box.heldBy = "theDestroyer"
+                if(box.rightline == 0):
+                    coords = convertBoxToLine(box.boxNumber, "r")
+                    fullmove = "opp "+coords
+                    updateCopyGame(fullmove, state, 1)
+                    #box.rightline = 1
+                    #if box.isFullBox():
+                    #    box.heldBy = "opp"
                     currSide = "r"
                     val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
-                    box.rightline = 0
-                    box.heldBy = ""
+                    #box.rightline = 0
+                    #box.heldBy = ""
+                    updateCopyGame(fullmove, state, 0)
                     if(val<best):
                         bestBox = box.boxNumber
                         bestSide = currSide
                     best = min(best, val)
-                    bestBox = box.boxNumber
                     beta = min(best, beta)
                     if(beta<=alpha):
                         break
+            print(box.boxNumber, bestBox, best, bestSide)
     return best, bestBox, bestSide
 
 
@@ -510,7 +580,7 @@ def main():
                 moveFile.close()
                 player, justTheirMove = splitMove(theirMove)
                 if(player == "theDestroyer"):
-                    time.sleep(0.1)
+                    time.sleep(0.2)
                     print(player)
                     print("sleeping...")
                 else:
