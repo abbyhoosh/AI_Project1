@@ -9,6 +9,7 @@ import time
 import numpy as np
 import math
 
+#_________________________________BOX CLASS AND FUNCTIONS____________________________________________
 class Box:
     def __init__(self, boxnum):
         self.boxNumber = boxnum
@@ -36,6 +37,7 @@ class Box:
         if(self.topline ==1):
             count+=1
         return count
+    
 goPath = Path("theDestroyer.go")
 movePath = Path("move_file")
 endPath = Path("end_game")
@@ -43,9 +45,6 @@ passPath = Path("theDestroyer.pass")
 gameBoard = np.full((9,9), 0)
 allBoxes = []
 threeLineBoxes = []
-#make an array for boxes that have 3 lines filled
-#maybe just order the array based of of that factor?? 3 first then 1 then 0 then 2?
-#i'm thinking 3 separate arrays might be easier for sorting purposes
 ########################################################
 
 def addToBoxArr(boxnum):
@@ -65,6 +64,58 @@ def addToBoxArr(boxnum):
         threeLineBoxes.pop(idx)
         print("fullbox")
 
+#finds the box number(s) that a set of coordinates will map to 
+def findBoxNumber(one, two, three, four):
+    if(one == three): ##if horizontal line
+        smallx, smally = getSmallerHorizCoord(one,two,three,four)
+        if(one == 0 or one == 9): ##if edge line
+            if(one == 0):
+                bigBoxnum = 9*smallx + smally
+                return -1, bigBoxnum, "h"
+
+            else:
+                smallBoxnum = 9*(smallx-1)+smally
+                return smallBoxnum, -1, "h"
+                
+        else:
+            bigBoxnum = 9*smallx + smally
+            smallBoxnum = 9*(smallx-1)+smally
+            return smallBoxnum, bigBoxnum, "h"
+    else:
+        smallx, smally = getSmallerVertCoord(one,two,three,four)
+        if (two == 0 or two == 9):
+            if(two==0):
+                bigBoxnum = 9*smallx+smally
+                return -1, bigBoxnum, "v"
+            else:
+                smallBoxnum = 9*smallx + (smally-1)
+                return smallBoxnum, -1, "v"
+        else:
+            bigBoxnum = 9*smallx+smally
+            smallBoxnum = 9*smallx + (smally-1)
+            return smallBoxnum, bigBoxnum, "v"
+
+#takes a box number and the side of the box that the line is on and 
+#returns the coordinates of that line in a string
+#for boxside:
+# t = topline, b = bottomline, r = rightline, l = leftline
+def convertBoxToLine(boxnumber, boxside):
+    if(boxside == "r" or boxside == "l"):
+        smallx = boxnumber//9
+        smally = boxnumber%9
+        if(boxside == "r"):
+            smally +=1
+        bigx = smallx+1
+        bigy = smally
+    elif(boxside == "b" or boxside == "t"):
+        if(boxside == "b"):
+            boxnumber+=9
+        smallx = boxnumber//9
+        smally = boxnumber%9
+        bigy = smally+1
+        bigx = smallx
+    coords = str(smallx) +","+str(smally)+" "+str(bigx)+","+str(bigy)
+    return coords
 
  #checks if board is full
 def isFullBoard(board):
@@ -72,21 +123,8 @@ def isFullBoard(board):
         if not(box.isFullBox()):
             return False
     return True
-#copyBoard is a copy of the board to go through testing a new move
-#if i go here how many points do i get
-def evalFunction(copyBoard):
-    #count points for us if we hold a box
-    aiPoints = 0
-    opponent = 0
-    for box in allBoxes:
-        if(box.heldBy == "theDestroyer"):
-            aiPoints+=1
-        elif(box.heldBy != ""):
-            opponent+=1
-    score = aiPoints-opponent
-    #count points for them if they hold a box
-    return score
-    #return difference in points aipts-opponentpts
+
+#__________________________________FINDING COORDINATES TO A MOVE_____________________________________
 
 ## cut off other teams name in their move
 # returns just the player, and coordinates of the move
@@ -151,37 +189,6 @@ def checkValidMove(coordmove):
     return True, "all good"
     ## return true if valid move, false if not
 
-#finds the box number(s) that a set of coordinates will map to 
-def findBoxNumber(one, two, three, four):
-    if(one == three): ##if horizontal line
-        smallx, smally = getSmallerHorizCoord(one,two,three,four)
-        if(one == 0 or one == 9): ##if edge line
-            if(one == 0):
-                bigBoxnum = 9*smallx + smally
-                return -1, bigBoxnum, "h"
-
-            else:
-                smallBoxnum = 9*(smallx-1)+smally
-                return smallBoxnum, -1, "h"
-                
-        else:
-            bigBoxnum = 9*smallx + smally
-            smallBoxnum = 9*(smallx-1)+smally
-            return smallBoxnum, bigBoxnum, "h"
-    else:
-        smallx, smally = getSmallerVertCoord(one,two,three,four)
-        if (two == 0 or two == 9):
-            if(two==0):
-                bigBoxnum = 9*smallx+smally
-                return -1, bigBoxnum, "v"
-            else:
-                smallBoxnum = 9*smallx + (smally-1)
-                return smallBoxnum, -1, "v"
-        else:
-            bigBoxnum = 9*smallx+smally
-            smallBoxnum = 9*smallx + (smally-1)
-            return smallBoxnum, bigBoxnum, "v"
-
 #gets the smaller coordinate between two coordinates
 def getSmallerHorizCoord(one,two,three,four):
     if (two<four):
@@ -194,6 +201,8 @@ def getSmallerVertCoord(one,two,three,four):
         return one,two
     else:
         return three,four
+    
+#_________________________________BOARD GAME UPDATES__________________________________________________
 
 ## write moves to our game board
 ## move is the full move with the name of the player
@@ -226,7 +235,6 @@ def updateInternalGame(move):
             allBoxes[smallBoxnum].heldBy = player
         addToBoxArr(smallBoxnum)
     
-
     ##to be implemented
     ##return true if successfully wrote move to board, false otherwise
 
@@ -240,11 +248,10 @@ def calculateFirstMove():
 ## calculate move
 def calculateMove():
     copyboard = copy.deepcopy(allBoxes)
-    bestScore, bestBoxnum, bestSide = minimax2(4, copyboard, True, -10000, 10000, 7)
+    bestScore, bestBoxnum, bestSide = minimax2(1, copyboard, True, -10000, 10000, 2)
     coords = convertBoxToLine(bestBoxnum, bestSide)
     updateInternalGame("theDestroyer "+coords)
     writeToMoveFile(coords)
-
     ##return move that our player is making
 
 ## write to move file
@@ -272,59 +279,9 @@ def passMove():
     else:
         print(player +" lost because of "+reason)
     
+#__________________________MINIMAX AND ALPHABETA FUNCTIONS____________________________________________
 
-# minimax algorithim implementation
-# state is the current state of the board being looked into
-# isMax says whether this is a max or min layer
-# 4 layers to start
-def minimax(state, depth, isMax):
-    print("uphere")
-    #makes a copy of the current board state to manipulate
-    copyOfBoard = allBoxes.copy()
-
-    if (isMax):
-        bestMove = (-10000, None)
-    else:
-        bestMove = (10000, None)
-
-    if (depth==0): # add check that all moves are taken somewhere
-        print("depth = 0 true")
-        return evalFunction(state) # this will return the possible score of this route
-    if (isFullBoard(state)):
-        print("isfullboardtrue")
-        return utility(state) #returns what the final score would be
-    print("in here")
-    
-    #goes through and checks if the box is full, if not it finds the first available side to start on
-    for box in copyOfBoard:
-        # checks if box if sull (bc then we don't need to check it)
-        if (not box.isFullBox()):
-            #checks each side of box to see if full and gos down first come first serve type beat
-            if (box.leftline == 0):
-                #if it's empty make it full
-                box.leftline = 1 
-                #recursivley call function with new cope of the game board to keep going down
-                # when evalFunction is returned it decides is that is better than the current best move
-                # replaces it with either new move or samve move and continues
-                bestMove = compare(minimax(copyOfBoard, depth-1, not isMax), bestMove, isMax)
-            elif (box.topline == 0):
-                box.topline = 1
-                bestMove = compare(minimax(copyOfBoard, depth-1, not isMax), bestMove, isMax)
-            elif (box.rightline == 0):
-                box.rightline = 1
-                bestMove = compare(minimax(copyOfBoard, depth-1, not isMax), bestMove, isMax)
-            elif (box.bottomline == 0):
-                box.bottomline = 1
-                bestMove = compare(minimax(copyOfBoard, depth-1, not isMax), bestMove, isMax)
-    
-    # Question--> we only need the number for most of this but need to return coordinates
-    # for the last one is there a way to get coordinates from the boxes so just bestMove can be returned
-    # with the move? idk if that makes sense.
-    print("Bestmove:")
-    print(bestMove[0])
-    return bestMove[0]
-
-# based on what kayer compares best move accordingly
+# based on what layer compares best move accordingly
 def compare(score, bestMove, isMax):
     if (isMax):
         if (score > bestMove[0]):
@@ -334,10 +291,21 @@ def compare(score, bestMove, isMax):
     else:
         if( score < bestMove[0]):
             bestMove[0] = score
-            return bestMove
+            return bestMove        
 
+## Eval Function for if i go here how many points do i get
+def evalFunction(copyBoard):
+    aiPoints = 0
+    opponent = 0
+    for box in allBoxes:
+        if(box.heldBy == "theDestroyer"):
+            aiPoints+=1
+        elif(box.heldBy != ""):
+            opponent+=1
+    score = aiPoints-opponent
+    return score #return difference in points aipts-opponentpts
 
-## utility function that determines if ai has more than the other player in points for temrinal moves
+## Utility function that determines if ai has more than the other player in points for terminal moves
 def utility(board):
     for box in board:
         aiPoints = 0
@@ -347,9 +315,10 @@ def utility(board):
     score = aiPoints - opponentPoints
     return score 
 
-
-#state is a copy of the board
+# MINIMAX with Alpha Beta Pruning
+# state is a copy of the board
 def minimax2(depth, state, isMax, alpha, beta, maxdepth):
+    print("enters minimax2")
     MAX = 10000
     MIN = -10000
     currSide = ""
@@ -362,26 +331,66 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
         for box in state:
             if (not box.isFullBox()):
                 if(box.leftline == 0):
+                    print("left line, the depth is ")
+                    print(depth)
                     box.leftline = 1
                     currSide = "l"
+                    val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
+                    if(val>best):
+                        bestBox = box.boxNumber
+                        bestSide = currSide
+                    best = max(best, val)
+                    alpha = max(best, alpha)
+                    if(beta<=alpha):
+                        break
                 elif(box.topline == 0):
+                    print("topline the depth is ")
+                    print(depth)
                     box.topline = 1
                     currSide = "t"
+                    val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
+                    if(val>best):
+                        bestBox = box.boxNumber
+                        bestSide = currSide
+                    best = max(best, val)
+                    alpha = max(best, alpha)
+                    if(beta<=alpha):
+                        break
                 elif(box.bottomline == 0):
+                    print("bottomline the depth is ")
+                    print(depth)
                     box.bottomline = 1
                     currSide = "b"
+                    val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
+                    if(val>best):
+                        bestBox = box.boxNumber
+                        bestSide = currSide
+                    best = max(best, val)
+                    alpha = max(best, alpha)
+                    if(beta<=alpha):
+                        break
                 else:
+                    print("rightline the depth is ")
+                    print(depth)
                     box.rightline = 1
                     currSide = "r"
-                val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
+                    val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
+                    if(val>best):
+                        bestBox = box.boxNumber
+                        bestSide = currSide
+                    best = max(best, val)
+                    alpha = max(best, alpha)
+                    if(beta<=alpha):
+                        break
+                #val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
                 #print(best, val, box.boxNumber)
-                if(val>best):
-                    bestBox = box.boxNumber
-                    bestSide = currSide
-                best = max(best, val)
-                alpha = max(best, alpha)
-                if(beta<=alpha):
-                    break
+                #if(val>best):
+                 #   bestBox = box.boxNumber
+                  #  bestSide = currSide
+                #best = max(best, val)
+                #alpha = max(best, alpha)
+                #if(beta<=alpha):
+                 #   break
     else:
         best = MAX
         for box in state:
@@ -389,49 +398,55 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                 if(box.leftline == 0):
                     box.leftline = 1
                     currSide = "l"
+                    val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
+                    if(val<best):
+                        bestBox = box.boxNumber
+                        bestSide = currSide
+                    best = min(best, val)
+                    bestBox = box.boxNumber
+                    beta = min(best, beta)
+                    if(beta<=alpha):
+                        break
                 elif(box.topline == 0):
                     box.topline = 1
                     currSide = "t"
+                    val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
+                    if(val<best):
+                        bestBox = box.boxNumber
+                        bestSide = currSide
+                    best = min(best, val)
+                    bestBox = box.boxNumber
+                    beta = min(best, beta)
+                    if(beta<=alpha):
+                        break
                 elif(box.bottomline == 0):
                     box.bottomline = 1
                     currSide = "b"
+                    val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
+                    if(val<best):
+                        bestBox = box.boxNumber
+                        bestSide = currSide
+                    best = min(best, val)
+                    bestBox = box.boxNumber
+                    beta = min(best, beta)
+                    if(beta<=alpha):
+                        break
                 else:
                     box.rightline = 1
                     currSide = "r"
-                val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
-                #print(best, val, box.boxNumber)
-                if(val<best):
+                    val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
+                    if(val<best):
+                        bestBox = box.boxNumber
+                        bestSide = currSide
+                    best = min(best, val)
                     bestBox = box.boxNumber
-                    bestSide = currSide
-                best = min(best, val)
-                bestBox = box.boxNumber
-                beta = min(best, beta)
-                if(beta<=alpha):
-                    break
+                    beta = min(best, beta)
+                    if(beta<=alpha):
+                        break
     return best, bestBox, bestSide
 
-#takes a box number and the side of the box that the line is on and 
-#returns the coordinates of that line in a string
-#for boxside:
-# t = topline, b = bottomline, r = rightline, l = leftline
-def convertBoxToLine(boxnumber, boxside):
-    if(boxside == "r" or boxside == "l"):
-        smallx = boxnumber//9
-        smally = boxnumber%9
-        if(boxside == "r"):
-            smally +=1
-        bigx = smallx+1
-        bigy = smally
-    elif(boxside == "b" or boxside == "t"):
-        if(boxside == "b"):
-            boxnumber+=9
-        smallx = boxnumber//9
-        smally = boxnumber%9
-        bigy = smally+1
-        bigx = smallx
-    coords = str(smallx) +","+str(smally)+" "+str(bigx)+","+str(bigy)
-    return coords
 
+#_________________________________________MAIN IMPLEMENTATION________________________________________
 
 def main():
     print("Starting up theDestroyer...")
@@ -452,9 +467,10 @@ def main():
         if passPath.exists() and movePath.exists():
             passMove()
         elif (movePath.exists() and goPath.exists()):
-            moveFile = open(movePath, "r") ##can read the move file
-            if (os.path.getsize(movePath) == 0): ## if move file is empty
-                moveFile.close()        ##needs to close read only and open write only to overwrite
+            moveFile = open(movePath, "r") # can read the move file
+            if (os.path.getsize(movePath) == 0): # if move file is empty
+                moveFile.close()        # needs to close read only and open write only to overwrite
+                print("we are player one")
                 ourMove = calculateFirstMove()
             else:
                 theirMove = moveFile.read()
