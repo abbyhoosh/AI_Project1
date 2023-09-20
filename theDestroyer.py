@@ -2,6 +2,7 @@
 
 ################# run with command: python3 referee.py theDestroyer theDestroyer --time_limit 10 & python3 theDestroyer.py &
 
+import copy
 import os
 from pathlib import Path
 import time
@@ -238,12 +239,12 @@ def calculateFirstMove():
 
 ## calculate move
 def calculateMove():
-    #minimax()
-    moveFileWrite = open(movePath, "w")         #will delete these later
-    moveFileWrite.write("theDestroyer 2,2 2,1")
-    moveFileWrite.close()
-    time.sleep(0.8)
-    ##to be implemented
+    copyboard = copy.deepcopy(allBoxes)
+    bestScore, bestBoxnum, bestSide = minimax2(4, copyboard, True, -10000, 10000, 7)
+    coords = convertBoxToLine(bestBoxnum, bestSide)
+    updateInternalGame("theDestroyer "+coords)
+    writeToMoveFile(coords)
+
     ##return move that our player is making
 
 ## write to move file
@@ -260,13 +261,17 @@ def passMove():
     closedBoxFile= open(movePath, "r")
     closedBoxSpot = closedBoxFile.read()
     player, justTheirMove = splitMove(closedBoxSpot)
-    checkValidMove(justTheirMove)
-    updateInternalGame(closedBoxSpot)
-    closedBoxFile.close()
-    writePassFile = open(movePath, "w")
-    writePassFile.write("theDestoyer 0,0 0,0")
-    writePassFile.close()
-    time.sleep(0.1)
+    isValid, reason = checkValidMove(justTheirMove)
+    if(isValid):
+        updateInternalGame(closedBoxSpot)
+        closedBoxFile.close()
+        writePassFile = open(movePath, "w")
+        writePassFile.write("theDestoyer 0,0 0,0")
+        writePassFile.close()
+        time.sleep(0.1)
+    else:
+        print(player +" lost because of "+reason)
+    
 
 # minimax algorithim implementation
 # state is the current state of the board being looked into
@@ -342,6 +347,69 @@ def utility(board):
     score = aiPoints - opponentPoints
     return score 
 
+
+#state is a copy of the board
+def minimax2(depth, state, isMax, alpha, beta, maxdepth):
+    MAX = 10000
+    MIN = -10000
+    currSide = ""
+    bestBox = -1
+    bestSide = ""
+    if(depth == maxdepth):
+        return evalFunction(state), -1, ""
+    if(isMax):
+        best = MIN
+        for box in state:
+            if (not box.isFullBox()):
+                if(box.leftline == 0):
+                    box.leftline = 1
+                    currSide = "l"
+                elif(box.topline == 0):
+                    box.topline = 1
+                    currSide = "t"
+                elif(box.bottomline == 0):
+                    box.bottomline = 1
+                    currSide = "b"
+                else:
+                    box.rightline = 1
+                    currSide = "r"
+                val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
+                #print(best, val, box.boxNumber)
+                if(val>best):
+                    bestBox = box.boxNumber
+                    bestSide = currSide
+                best = max(best, val)
+                alpha = max(best, alpha)
+                if(beta<=alpha):
+                    break
+    else:
+        best = MAX
+        for box in state:
+            if (not box.isFullBox()):
+                if(box.leftline == 0):
+                    box.leftline = 1
+                    currSide = "l"
+                elif(box.topline == 0):
+                    box.topline = 1
+                    currSide = "t"
+                elif(box.bottomline == 0):
+                    box.bottomline = 1
+                    currSide = "b"
+                else:
+                    box.rightline = 1
+                    currSide = "r"
+                val, bnum, cside = minimax2(depth+1, state, True, alpha, beta, maxdepth)
+                #print(best, val, box.boxNumber)
+                if(val<best):
+                    bestBox = box.boxNumber
+                    bestSide = currSide
+                best = min(best, val)
+                bestBox = box.boxNumber
+                beta = min(best, beta)
+                if(beta<=alpha):
+                    break
+    return best, bestBox, bestSide
+
 #takes a box number and the side of the box that the line is on and 
 #returns the coordinates of that line in a string
 #for boxside:
@@ -366,8 +434,7 @@ def convertBoxToLine(boxnumber, boxside):
 
 
 def main():
-    print("here")
-
+    print("Starting up theDestroyer...")
     for i in range (0,81):
         allBoxes.append(Box(i))
 
@@ -375,16 +442,6 @@ def main():
     print(convertBoxToLine(80, "b"))
     print(convertBoxToLine(80, "r"))
     print(convertBoxToLine(80, "l"))
-    minimax(allBoxes, 4, True)
-    ''''
-    updateInternalGame("me 2,1 2,2")
-    updateInternalGame("me 4,2 3,2")
-    updateInternalGame("me 0,0 0,1")
-    updateInternalGame("me 0,9 1,9")
-    updateInternalGame("me 0,9 0,8")
-    updateInternalGame("me 0,8 1,8")
-    updateInternalGame("me 1,9 1,8")
-    '''
 
     while not endPath.exists():
         while not goPath.exists():
@@ -392,7 +449,7 @@ def main():
             if passPath.exists():
                 passMove()
 
-        if passPath.exists():
+        if passPath.exists() and movePath.exists():
             passMove()
         elif (movePath.exists() and goPath.exists()):
             moveFile = open(movePath, "r") ##can read the move file
@@ -420,6 +477,7 @@ def main():
                             calculateMove()
                         else:
                             print(player + " lost the game because "+ reason)
+                            break
 
 
 if __name__ == "__main__":
