@@ -100,6 +100,11 @@ def findBoxNumber(one, two, three, four):
 #for boxside:
 # t = topline, b = bottomline, r = rightline, l = leftline
 def convertBoxToLine(boxnumber, boxside):
+    print(boxnumber)
+    smallx = 0
+    smally = 0
+    bigx = 0
+    bigy = 0
     if(boxside == "r" or boxside == "l"):
         smallx = boxnumber//9
         smally = boxnumber%9
@@ -108,10 +113,11 @@ def convertBoxToLine(boxnumber, boxside):
         bigx = smallx+1
         bigy = smally
     elif(boxside == "b" or boxside == "t"):
+        boxandnine=0
         if(boxside == "b"):
-            boxnumber+=9
-        smallx = boxnumber//9
-        smally = boxnumber%9
+            boxandnine = boxnumber+9
+        smallx = boxandnine//9
+        smally = boxandnine%9
         bigy = smally+1
         bigx = smallx
     coords = str(smallx) +","+str(smally)+" "+str(bigx)+","+str(bigy)
@@ -140,9 +146,9 @@ def individualCoords(move):
     second = move[space+1:]
     commaone = first.find(",")
     commatwo = second.find(",")
-    one = int(first[:commaone])
+    one = int(first[0:commaone])
     two = int(first[commaone+1:])
-    three = int(second[:commatwo])
+    three = int(second[0:commatwo])
     four = int(second[commatwo+1:])
     return one,two,three,four
 
@@ -219,10 +225,12 @@ def updateInternalGame(move):
             allBoxes[bigBoxnum].topline = 1
             allBoxes[bigBoxnum].filledCount +=1
             addToBoxArr(bigBoxnum, allBoxes)
+            print(str(bigBoxnum) +" topline held by: "+player)
         elif(horv == "v"):
             allBoxes[bigBoxnum].leftline = 1
             allBoxes[bigBoxnum].filledCount +=1
             addToBoxArr(bigBoxnum, allBoxes)
+            print(str(bigBoxnum) +" leftline held by: "+player)
         if(allBoxes[bigBoxnum].isFullBox()):
             allBoxes[bigBoxnum].heldBy = player
     if(smallBoxnum != -1):
@@ -230,22 +238,17 @@ def updateInternalGame(move):
             allBoxes[smallBoxnum].bottomline = 1
             allBoxes[smallBoxnum].filledCount +=1
             addToBoxArr(smallBoxnum, allBoxes)
+            print(str(smallBoxnum) +" bottomline held by: "+player)
         elif(horv == "v"):
             allBoxes[smallBoxnum].rightline = 1
             allBoxes[smallBoxnum].filledCount +=1
             addToBoxArr(smallBoxnum, allBoxes)
+            print(str(smallBoxnum) +" rightline held by: "+player)
         if(allBoxes[smallBoxnum].isFullBox()):
             allBoxes[smallBoxnum].heldBy = player
     
-    ##to be implemented
     ##return true if successfully wrote move to board, false otherwise
 
-## calculates move for when we are first
-def calculateFirstMove():
-    moveFileWrite = open(movePath, "w")
-    moveFileWrite.write("theDestroyer 1,3 2,3")
-    moveFileWrite.close()
-    time.sleep(0.8)
 
 ## calculate move
 def calculateMove():
@@ -455,7 +458,7 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     alpha = max(best, alpha)
                     if(beta<=alpha):
                         break
-            print(box.boxNumber, bestBox, best, bestSide)
+            #print(box.boxNumber, bestBox, best, bestSide)
                 #val, bnum, cside = minimax2(depth+1, state, False, alpha, beta, maxdepth)
                 #print(best, val, box.boxNumber)
                 #if(val>best):
@@ -545,7 +548,7 @@ def minimax2(depth, state, isMax, alpha, beta, maxdepth):
                     beta = min(best, beta)
                     if(beta<=alpha):
                         break
-            print(box.boxNumber, bestBox, best, bestSide)
+            #print(box.boxNumber, bestBox, best, bestSide)
     return best, bestBox, bestSide
 
 
@@ -556,25 +559,21 @@ def main():
     for i in range (0,81):
         allBoxes.append(Box(i))
 
-    print(convertBoxToLine(80, "t"))
-    print(convertBoxToLine(80, "b"))
-    print(convertBoxToLine(80, "r"))
-    print(convertBoxToLine(80, "l"))
-
+    print(convertBoxToLine(18, "l"))
     while not endPath.exists():
         while not goPath.exists():
             time.sleep(0.1)
             if passPath.exists() and movePath.exists():
                 passMove()
 
-        if passPath.exists() and movePath.exists():
-            passMove()
-        elif (movePath.exists() and goPath.exists()):
+        #if passPath.exists() and movePath.exists():
+            #passMove()
+        if (movePath.exists() and goPath.exists()):
             moveFile = open(movePath, "r") # can read the move file
             if (os.path.getsize(movePath) == 0): # if move file is empty
                 moveFile.close()        # needs to close read only and open write only to overwrite
                 print("we are player one")
-                ourMove = calculateFirstMove()
+                calculateMove()
             else:
                 theirMove = moveFile.read()
                 moveFile.close()
@@ -584,9 +583,7 @@ def main():
                     print(player)
                     print("sleeping...")
                 else:
-                    print(player)
-                    print(justTheirMove)
-                    print("their move")
+                    print(player + ", their move: "+ justTheirMove)
                     if(justTheirMove == "0,0 0,0"):
                         calculateMove()
                     else:
