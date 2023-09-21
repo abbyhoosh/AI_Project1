@@ -1,0 +1,72 @@
+a. Alyssa Ogi and Abby Hoschouer
+
+Both Abby and Alyssa put in roughlythe same amount of time 
+and effort to complete this project. We split up the main parts
+of this project between the two of us to work on. Alyssa began
+with setting up the file - being able to read from the move file
+and write to it as well, playing until the end game file appears,
+checking valid moves, waiting for the correct .go file to play, etc.
+Once most of the basics were in place, Abby began implementing the
+minimax function with alpla beta pruning. This took a while 
+to do and involved multiple functions to support it. Alyssa aided
+in the creation of the minimax function as well. Abby wrote
+the utility function and evaluation function, and Alyssa created
+the Box class which helped maintain an internal game board.
+The rest of what was implemented was a mix between Abby and Alyssa's
+work.
+
+b. To compile/run our code, it must be in a new terminal each time.
+If run once in a terminal, you must delete that terminal and make 
+a new one or else it will save some information in our game since
+you must run our file and the referee file in paralell. The command
+Alyssa uses to run on a mac is: 
+
+python3 referee.py theDestroyer player2name --time_limit 10 & python3 theDestroyer.py &
+
+(player2name being the name of the other player)
+Abby runs hers differently and when she plays against her code, she
+opens hers in two different terminals. The following two commands
+she uses in two separate terminals.
+
+python referee.py
+
+python theDestroyer.py
+
+Also when running make sure that no .pass files, move_file, end_game
+file or .go files are in the directory. If so they should be deleted
+and a new terminal opened to run.
+
+c. The utility function that was used was just the basic one described
+in the project description that just takes all the boxes at the end of the game that our team
+captured, and the number of boxes the opponent captured, and subtracts the 
+opponents total from theDestroyer total. If positive it means theDestroyer
+won, if 0 then a tie, and if negative then theDestroyer lost.
+
+d. The evaluation function used is very similar to our utility function
+but this takes in a game board that is possible in the future, it counts
+how many boxes theDestroyer and the opponent each have and subtracts
+the opponent from the Destroyer and returns the number. Again positive 
+if it is beneficial to theDestroyer, 0 if neutral, and negative if good for 
+the opponent. Our program chooses plays that will get it more points
+
+e. We used the cutting off search for our heuristic, this ensured that
+our moves were in a timely manner, and benefitted our player.
+
+f. Our program played against both human players and itself, it did 
+well against both itself and us/humans, it picked up on moves that I did
+not see and played very quick.
+Our programs strengths is that it will play very quickly. It won't give
+up 3 sides boxes and will capture any 3 sided boxes on the board.
+The only weakness to our program is that we used the cutting off search which we
+recognize will not get us a win in every game, because we know other programs
+might look deeper into the game and recognize that if they give us a smaller set of boxes
+they would get more in the end. But we are proud of what are game can do, and will try to 
+implemnt a deeper search like iterative deepening for the tournament.
+
+g. The evaluation function and heuristics we chose are good because it allows for
+quick gameplay that other teams might not have. With cutting off search
+we are guarenteed speed. Also I want to add that we were able to finish our project 
+by the original due date. We will be looking to improve it with the 4 extra days given to 
+us but if that does not happen (as in if you are reading this) the we were unsuccessful in our efforts.
+The evaluation function is good because it basically keeps what the score would be for
+each possible board that it sees. And it is consistent with our utility function.
