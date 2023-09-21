@@ -1,6 +1,6 @@
 # Abby and Alyssa's dots and boxes player
 
-################# run with command: python3 referee.py theDestroyer theDestroyer --time_limit 10 & python3 theDestroyer.py &
+################# run with command: python3 referee.py theDestroyer player2name --time_limit 10 & python3 theDestroyer.py &
 
 import copy
 import os
@@ -119,7 +119,6 @@ def individualCoords(move):
 ## check if valid move
     #move is just the coordinates string
 def checkValidMove(coordmove):
-    print("checking valid")
     one,two,three,four = individualCoords(coordmove)
 
     ##checking if outside the board
